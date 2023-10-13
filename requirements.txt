@@ -1,0 +1,9 @@
+langchain
+sentence-transformers
+chromadb
+openai
+tiktoken
+requests
+fake-useragent
+undetected-chromedriver
+selenium
