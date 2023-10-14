@@ -1,8 +1,9 @@
 import gradio as gr
+import validators
 from dotenv import load_dotenv
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
-from langchain.document_loaders import AsyncHtmlLoader
+from langchain.document_loaders import AsyncChromiumLoader
 from langchain.document_transformers import Html2TextTransformer
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.memory import ConversationBufferMemory
@@ -16,23 +17,36 @@ load_dotenv()
 llm = ChatOpenAI(temperature=1.0, model='gpt-3.5-turbo-0613')
 memory = ConversationBufferMemory(k=2, memory_key="chat_history", input_key="chat_history")
 embeddings = OpenAIEmbeddings()
+html2text = Html2TextTransformer(ignore_images=True, ignore_links=True)
 
 global vectorstore
 vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
 
 global docs_count
 
-def build_database(url):
+def import_website(url):
 
-    links = depth_lookup(url, 3)
+    if validators.url(url):
 
-    loader = AsyncHtmlLoader(links)
-    docs = loader.load()
-    html2text = Html2TextTransformer(ignore_images=True, ignore_links=True)
-    docs = html2text.transform_documents(docs)
-    vectorstore.add_documents(docs)
+        links = depth_lookup(url, 3)
 
-    return len(vectorstore.get()['documents'])
+        loader = AsyncChromiumLoader(links)
+        docs = loader.load()
+        docs = html2text.transform_documents(docs)
+        vectorstore.add_documents(docs)
+
+    return len(vectorstore.get()['documents']) if vectorstore.get()['documents'] else 0
+
+def import_page(url):
+
+    if validators.url(url):
+
+        loader = AsyncChromiumLoader([url])
+        docs = loader.load()
+        docs = html2text.transform_documents(docs)
+        vectorstore.add_documents(docs)
+
+    return len(vectorstore.get()['documents']) if vectorstore.get()['documents'] else 0
 
 
 def predict(message, history):
@@ -54,7 +68,7 @@ def predict(message, history):
 
     return output
 
-with gr.Blocks() as demo:
+with gr.Blocks(title="Clarity") as demo:
     
     gr.Markdown(
         """
@@ -72,7 +86,14 @@ with gr.Blocks() as demo:
             input_url = gr.Textbox(label="URL", lines=1)
             
             btn = gr.Button(value="Import Website")
-            btn.click(build_database, inputs=[input_url], outputs=[docs_count])        
+            btn.click(import_website, inputs=[input_url], outputs=[docs_count])        
+        
+        with gr.Group():
+
+            input_url2 = gr.Textbox(label="URL", lines=1)
+            
+            btn = gr.Button(value="Import Page")
+            btn.click(import_page, inputs=[input_url2], outputs=[docs_count])        
 
 
     gr.ChatInterface(predict)
