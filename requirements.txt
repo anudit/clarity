@@ -1,6 +1,5 @@
 langchain
 sentence-transformers
-faiss-cpu
 openai
 tiktoken
 requests
@@ -14,3 +13,5 @@ html2text
 python-dotenv
 playwright
 validators
+youtube-transcript-api
+pytube
