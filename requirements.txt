@@ -1,9 +1,14 @@
 langchain
 sentence-transformers
-chromadb
+faiss-cpu
 openai
 tiktoken
 requests
 fake-useragent
 undetected-chromedriver
 selenium
+gradio
+beautifulsoup4
+chromadb
+html2text
+python-dotenv
